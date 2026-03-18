@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "node --watch backend/server.js",
-    "dev:frontend": "cd frontend && ../node_modules/.bin/next dev",
+    "dev:frontend": "rm -rf frontend/.next-dev && cd frontend && NEXT_DIST_DIR=.next-dev ../node_modules/.bin/next dev",
     "build": "cd frontend && ../node_modules/.bin/next build",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "node backend/server.js",

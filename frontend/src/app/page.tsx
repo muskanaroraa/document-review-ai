@@ -1,7 +1,26 @@
+"use client";
+
+import { useState } from "react";
+
 import DocumentList from "../components/DocumentList";
 import DocumentUpload from "../components/DocumentUpload";
 
+type UploadedDocument = {
+  fileName: string;
+  wordCount: number;
+  textPreview: string;
+};
+
 export default function Home() {
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [selectedDocument, setSelectedDocument] =
+    useState<UploadedDocument | null>(null);
+
+  function handleUpload(document: UploadedDocument) {
+    setDocuments((currentDocuments) => [document, ...currentDocuments]);
+    setSelectedDocument(document);
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-12">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -27,7 +46,7 @@ export default function Home() {
             </p>
           </div>
 
-          <DocumentUpload />
+          <DocumentUpload onUpload={handleUpload} />
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -36,11 +55,16 @@ export default function Home() {
               Uploaded Documents
             </h2>
             <p className="text-sm text-slate-600">
-              Parsed document summaries will appear here after upload.
+              Uploaded files appear here. Click a document to view its parsed
+              details.
             </p>
           </div>
 
-          <DocumentList document={null} />
+          <DocumentList
+            documents={documents}
+            selectedDocument={selectedDocument}
+            onSelect={setSelectedDocument}
+          />
         </section>
       </div>
     </main>

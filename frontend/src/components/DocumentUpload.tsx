@@ -16,6 +16,10 @@ type UploadErrorResponse = {
   error?: string;
 };
 
+type DocumentUploadProps = {
+  onUpload: (document: UploadResult) => void;
+};
+
 const ACCEPTED_FILE_TYPES = {
   "application/pdf": [".pdf"],
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
@@ -24,21 +28,19 @@ const ACCEPTED_FILE_TYPES = {
   "text/plain": [".txt"],
 };
 
-export default function DocumentUpload() {
+export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [uploadedDocument, setUploadedDocument] = useState<UploadResult | null>(
-    null
-  );
 
   const handleUpload = useCallback(async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
 
     try {
+      setLoading(true);
       setStatus("uploading");
       setErrorMessage("");
-      setUploadedDocument(null);
 
       const response = await axios.post<UploadResult>(
         "http://localhost:5000/api/upload",
@@ -50,7 +52,7 @@ export default function DocumentUpload() {
         }
       );
 
-      setUploadedDocument(response.data);
+      onUpload(response.data);
       setStatus("success");
     } catch (error) {
       const message = axios.isAxiosError<UploadErrorResponse>(error)
@@ -59,8 +61,10 @@ export default function DocumentUpload() {
 
       setErrorMessage(message);
       setStatus("error");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [onUpload]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -79,19 +83,24 @@ export default function DocumentUpload() {
     onDrop,
     multiple: false,
     accept: ACCEPTED_FILE_TYPES,
+    disabled: loading,
   });
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <div className="w-full">
       <div
         {...getRootProps()}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
-          isDragActive
+        className={`rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
+          loading
+            ? "cursor-not-allowed border-slate-300 bg-slate-50"
+            : "cursor-pointer"
+        } ${
+          !loading && isDragActive
             ? "border-black bg-black/[0.04]"
             : "border-black/15 bg-white hover:border-black/30"
         }`}
       >
-        <input {...getInputProps()} />
+        <input {...getInputProps({ disabled: loading })} />
 
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-black">
@@ -102,47 +111,25 @@ export default function DocumentUpload() {
           </p>
         </div>
 
-        {status === "uploading" && (
-          <p className="mt-4 text-sm font-medium text-black">
-            Uploading document...
-          </p>
+        {loading && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-slate-700">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+            <span>Uploading...</span>
+          </div>
         )}
 
-        {status === "success" && (
+        {status === "success" && !loading && (
           <p className="mt-4 text-sm font-medium text-green-700">
             Document uploaded successfully.
           </p>
         )}
 
-        {status === "error" && (
+        {status === "error" && !loading && (
           <p className="mt-4 text-sm font-medium text-red-600">
             {errorMessage}
           </p>
         )}
       </div>
-
-      {uploadedDocument && (
-        <div className="w-full rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-black">Parsed Document</h2>
-
-          <div className="mt-4 space-y-3 text-sm text-black/70">
-            <p>
-              <span className="font-semibold text-black">File Name:</span>{" "}
-              {uploadedDocument.fileName}
-            </p>
-            <p>
-              <span className="font-semibold text-black">Word Count:</span>{" "}
-              {uploadedDocument.wordCount}
-            </p>
-            <div>
-              <p className="font-semibold text-black">Text Preview:</p>
-              <p className="mt-2 rounded-xl bg-black/[0.03] p-4 leading-6 text-black/75">
-                {uploadedDocument.textPreview || "No preview available."}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
