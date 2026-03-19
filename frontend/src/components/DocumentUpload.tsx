@@ -30,15 +30,19 @@ const ACCEPTED_FILE_TYPES = {
 
 export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
-  const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleUpload = useCallback(async (file: File) => {
+    if (isUploading) {
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      setLoading(true);
+      setIsUploading(true);
       setStatus("uploading");
       setErrorMessage("");
 
@@ -54,6 +58,9 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
       onUpload(response.data);
       setStatus("success");
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1500);
+      });
     } catch (error) {
       const message = axios.isAxiosError<UploadErrorResponse>(error)
         ? error.response?.data?.error || "Failed to upload the document."
@@ -62,9 +69,9 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       setErrorMessage(message);
       setStatus("error");
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
-  }, [onUpload]);
+  }, [isUploading, onUpload]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -83,53 +90,58 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     onDrop,
     multiple: false,
     accept: ACCEPTED_FILE_TYPES,
-    disabled: loading,
+    disabled: isUploading,
   });
 
   return (
     <div className="w-full">
       <div
         {...getRootProps()}
-        className={`rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
-          loading
-            ? "cursor-not-allowed border-slate-300 bg-slate-50"
+        className={`rounded-2xl border-2 border-dashed p-8 text-center transition duration-200 ${
+          isUploading
+            ? "cursor-not-allowed border-slate-300 bg-slate-50 opacity-50"
             : "cursor-pointer"
         } ${
-          !loading && isDragActive
+          !isUploading && isDragActive
             ? "border-black bg-black/[0.04]"
             : "border-black/15 bg-white hover:border-black/30"
         }`}
       >
-        <input {...getInputProps({ disabled: loading })} />
+        <input {...getInputProps({ disabled: isUploading })} />
 
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-black">
-            Upload a document
-          </h1>
-          <p className="text-sm text-black/65">
-            Drag and drop a PDF, DOCX, or TXT file here, or click to browse.
-          </p>
-        </div>
-
-        {loading && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-slate-700">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-            <span>Uploading...</span>
+        {isUploading && (
+          <div className="flex min-h-36 flex-col items-center justify-center gap-3">
+            <span className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-900" />
+            <p className="text-lg font-semibold text-slate-900">
+              Uploading document...
+            </p>
+            <p className="text-sm text-slate-500">
+              Please wait while we process your file.
+            </p>
           </div>
         )}
 
-        {status === "success" && !loading && (
+        {!isUploading && (
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold text-black">
+              Upload a document
+            </h1>
+            <p className="text-sm text-black/65">
+              Drag and drop a PDF, DOCX, or TXT file here, or click to browse.
+            </p>
+          </div>
+        )}
+
+        {status === "success" && !isUploading && (
           <p className="mt-4 text-sm font-medium text-green-700">
             Document uploaded successfully.
           </p>
         )}
-
-        {status === "error" && !loading && (
-          <p className="mt-4 text-sm font-medium text-red-600">
-            {errorMessage}
-          </p>
-        )}
       </div>
+
+      {status === "error" && !isUploading && (
+        <p className="mt-3 text-sm font-medium text-red-600">{errorMessage}</p>
+      )}
     </div>
   );
 }

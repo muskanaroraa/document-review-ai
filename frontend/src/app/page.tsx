@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import DocumentList from "../components/DocumentList";
 import DocumentUpload from "../components/DocumentUpload";
@@ -9,6 +9,7 @@ type UploadedDocument = {
   fileName: string;
   wordCount: number;
   textPreview: string;
+  uploadedAt: string;
 };
 
 export default function Home() {
@@ -16,9 +17,51 @@ export default function Home() {
   const [selectedDocument, setSelectedDocument] =
     useState<UploadedDocument | null>(null);
 
-  function handleUpload(document: UploadedDocument) {
-    setDocuments((currentDocuments) => [document, ...currentDocuments]);
-    setSelectedDocument(document);
+  useEffect(() => {
+    if (documents.length === 0) {
+      setSelectedDocument(null);
+    }
+  }, [documents]);
+
+  function handleUpload(
+    document: Omit<UploadedDocument, "uploadedAt">
+  ) {
+    const documentWithTimestamp = {
+      ...document,
+      uploadedAt: new Date().toISOString(),
+    };
+
+    setDocuments((currentDocuments) => [
+      documentWithTimestamp,
+      ...currentDocuments,
+    ]);
+    setSelectedDocument(documentWithTimestamp);
+  }
+
+  function handleDelete(documentToDelete: UploadedDocument) {
+    setDocuments((currentDocuments) =>
+      currentDocuments.filter(
+        (document) =>
+          !(
+            document.fileName === documentToDelete.fileName &&
+            document.wordCount === documentToDelete.wordCount &&
+            document.uploadedAt === documentToDelete.uploadedAt
+          )
+      )
+    );
+
+    setSelectedDocument((currentSelectedDocument) => {
+      if (
+        currentSelectedDocument &&
+        currentSelectedDocument.fileName === documentToDelete.fileName &&
+        currentSelectedDocument.wordCount === documentToDelete.wordCount &&
+        currentSelectedDocument.uploadedAt === documentToDelete.uploadedAt
+      ) {
+        return null;
+      }
+
+      return currentSelectedDocument;
+    });
   }
 
   return (
@@ -64,6 +107,7 @@ export default function Home() {
             documents={documents}
             selectedDocument={selectedDocument}
             onSelect={setSelectedDocument}
+            onDelete={handleDelete}
           />
         </section>
       </div>
