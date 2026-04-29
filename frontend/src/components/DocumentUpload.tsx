@@ -4,12 +4,17 @@ import { useCallback, useState } from "react";
 import axios from "axios";
 import { useDropzone } from "react-dropzone";
 
+import type { OfferAnalysis, UploadedOfferDocument } from "../types/offer";
+
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
-type UploadResult = {
+type UploadApiResponse = {
   fileName: string;
   wordCount: number;
+  type: string;
   textPreview: string;
+  analysis: OfferAnalysis | null;
+  analysisError: string | null;
 };
 
 type UploadErrorResponse = {
@@ -17,7 +22,7 @@ type UploadErrorResponse = {
 };
 
 type DocumentUploadProps = {
-  onUpload: (document: UploadResult) => void;
+  onUpload: (document: Omit<UploadedOfferDocument, "uploadedAt">) => void;
 };
 
 const ACCEPTED_FILE_TYPES = {
@@ -46,7 +51,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       setStatus("uploading");
       setErrorMessage("");
 
-      const response = await axios.post<UploadResult>(
+      const response = await axios.post<UploadApiResponse>(
         "http://localhost:5000/api/upload",
         formData,
         {
@@ -56,15 +61,22 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         }
       );
 
-      onUpload(response.data);
+      onUpload({
+        fileName: response.data.fileName,
+        wordCount: response.data.wordCount,
+        type: response.data.type,
+        textPreview: response.data.textPreview,
+        analysis: response.data.analysis,
+        analysisError: response.data.analysisError,
+      });
       setStatus("success");
       await new Promise((resolve) => {
         setTimeout(resolve, 1500);
       });
     } catch (error) {
       const message = axios.isAxiosError<UploadErrorResponse>(error)
-        ? error.response?.data?.error || "Failed to upload the document."
-        : "Failed to upload the document.";
+        ? error.response?.data?.error || "Failed to upload document."
+        : "Failed to upload document.";
 
       setErrorMessage(message);
       setStatus("error");
@@ -113,10 +125,10 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
           <div className="flex min-h-36 flex-col items-center justify-center gap-3">
             <span className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-900" />
             <p className="text-lg font-semibold text-slate-900">
-              Uploading document...
+              Uploading offer letter...
             </p>
             <p className="text-sm text-slate-500">
-              Please wait while we process your file.
+              Please wait while we process and analyze your file.
             </p>
           </div>
         )}
@@ -124,17 +136,18 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         {!isUploading && (
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-black">
-              Upload a document
+              Upload an offer letter
             </h1>
             <p className="text-sm text-black/65">
-              Drag and drop a PDF, DOCX, or TXT file here, or click to browse.
+              Drag and drop a PDF, DOCX, or TXT offer letter here, or click to
+              browse.
             </p>
           </div>
         )}
 
         {status === "success" && !isUploading && (
           <p className="mt-4 text-sm font-medium text-green-700">
-            Document uploaded successfully.
+            Offer letter uploaded successfully.
           </p>
         )}
       </div>

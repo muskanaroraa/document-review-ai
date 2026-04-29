@@ -4,18 +4,12 @@ import { useEffect, useState } from "react";
 
 import DocumentList from "../components/DocumentList";
 import DocumentUpload from "../components/DocumentUpload";
-
-type UploadedDocument = {
-  fileName: string;
-  wordCount: number;
-  textPreview: string;
-  uploadedAt: string;
-};
+import type { UploadedOfferDocument } from "../types/offer";
 
 export default function Home() {
-  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [documents, setDocuments] = useState<UploadedOfferDocument[]>([]);
   const [selectedDocument, setSelectedDocument] =
-    useState<UploadedDocument | null>(null);
+    useState<UploadedOfferDocument | null>(null);
 
   useEffect(() => {
     if (documents.length === 0) {
@@ -24,7 +18,7 @@ export default function Home() {
   }, [documents]);
 
   function handleUpload(
-    document: Omit<UploadedDocument, "uploadedAt">
+    document: Omit<UploadedOfferDocument, "uploadedAt">
   ) {
     const documentWithTimestamp = {
       ...document,
@@ -38,7 +32,7 @@ export default function Home() {
     setSelectedDocument(documentWithTimestamp);
   }
 
-  function handleDelete(documentToDelete: UploadedDocument) {
+  function handleDelete(documentToDelete: UploadedOfferDocument) {
     setDocuments((currentDocuments) =>
       currentDocuments.filter(
         (document) =>
@@ -70,11 +64,12 @@ export default function Home() {
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="max-w-3xl space-y-3">
             <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-              AI Document Review System
+              Offer Intelligence
             </h1>
             <p className="text-base leading-7 text-slate-600">
-              Upload contracts, reports, and text files to extract structured
-              content that can be reviewed by the AI analysis engine.
+              Upload your offer letter and understand compensation, key terms,
+              risk areas, and negotiation points from an initial AI-assisted
+              review.
             </p>
           </div>
         </section>
@@ -82,10 +77,11 @@ export default function Home() {
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="mb-6 space-y-2">
             <h2 className="text-2xl font-semibold text-slate-900">
-              Drag and drop documents for AI review
+              Upload your offer letter
             </h2>
             <p className="text-sm text-slate-600">
-              Supported file types: PDF, DOCX, and TXT.
+              Supported file types: PDF, DOCX, and TXT. Best used for
+              employment offer letters and compensation documents.
             </p>
           </div>
 
@@ -95,11 +91,11 @@ export default function Home() {
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="mb-6 space-y-2">
             <h2 className="text-2xl font-semibold text-slate-900">
-              Uploaded Documents
+              Uploaded Offer Letters
             </h2>
             <p className="text-sm text-slate-600">
-              Uploaded files appear here. Click a document to view its parsed
-              details.
+              Uploaded files appear here. Click an offer letter to review its
+              parsed details and initial insight.
             </p>
           </div>
 

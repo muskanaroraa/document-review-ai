@@ -65,6 +65,7 @@ async function parseDocument(file) {
   return {
     fileName: file.originalname,
     wordCount: calculateWordCount(normalizedText),
+    text: normalizedText,
     textPreview: createTextPreview(normalizedText),
   };
 }
